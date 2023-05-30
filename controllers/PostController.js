@@ -1,4 +1,5 @@
 import PostModel from '../models/Post.js';
+import UserModel from '../models/User.js';
 
 export const getAll = async (req, res) => {
 	try {
@@ -110,6 +111,58 @@ export const update = async (req, res) => {
 		console.log(err);
 		res.status(500).json({
 			message: 'Failed to update article',
+		});
+	}
+};
+
+export const getLastTags = async (req, res) => {
+	try {
+		const posts = await PostModel.find().limit(5).exec();
+		const tags = posts
+			.map(el => {
+				el.tags;
+			})
+			.flat()
+			.slice(0, 5);
+
+		res.json(tags);
+	} catch (err) {
+		console.log(err);
+		res.status(500).json({
+			message: 'Failed to get tags',
+		});
+	}
+};
+export const createComment = async (req, res) => {
+	try {
+		const postId = req.params.id;
+		const post = await PostModel.findById(postId);
+
+		if (!post) {
+			return res.status(404).json({ message: 'Article not found' });
+		}
+
+		const user = await UserModel.findById(req.body.authorId);
+		if (!user) {
+			return res.status(404).json({ message: 'User not found' });
+		}
+
+		const newComment = {
+			author: req.body.authorId,
+			content: req.body.content,
+		};
+
+		const updatedPost = await PostModel.findOneAndUpdate(
+			{ _id: postId },
+			{ $push: { comments: newComment } },
+			{ new: true }
+		);
+
+		res.json(updatedPost);
+	} catch (err) {
+		console.log(err);
+		res.status(500).json({
+			message: 'Failed to added comment',
 		});
 	}
 };

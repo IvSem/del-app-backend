@@ -27,3 +27,9 @@ export const postCreateValidation = [
 	body('tags', 'Wrong format, enter an array of tags').optional().isArray(),
 	body('imageUrl', 'Incorrect image link').optional().isString(),
 ];
+
+export const commentCreateValidation = [
+	body('content', 'Content comment must be most 3 characters')
+		.isLength({ min: 3 })
+		.isString(),
+];

@@ -5,6 +5,14 @@ import UserModel from '../models/User.js';
 export const register = async (req, res) => {
 	try {
 		const password = req.body.password;
+
+		const existingUser = await UserModel.findOne({ email: req.body.email });
+		if (existingUser) {
+			return res
+				.status(400)
+				.json({ message: 'This user is already registered' });
+		}
+
 		const salt = await genSalt(10);
 		const hash = await bcrypt.hash(password, salt);
 
@@ -70,7 +78,7 @@ export const login = async (req, res) => {
 		res.json({ ...userData, token });
 	} catch (err) {
 		console.log(err);
-		res.status(500).json({
+		res.status(401).json({
 			message: 'Authorization error',
 		});
 	}
@@ -86,7 +94,7 @@ export const getMe = async (req, res) => {
 		res.json(userData);
 	} catch (err) {
 		console.log(err);
-		res.status(500).json({
+		res.status(401).json({
 			message: 'Acces error',
 		});
 	}

@@ -7,6 +7,7 @@ import {
 	loginValidation,
 	registerValidation,
 	postCreateValidation,
+	commentCreateValidation,
 } from './validations/validations.js';
 import { PostController, UserController } from './controllers/index.js';
 import { checkAuth, handleValidationsErrors } from './utils/index.js';
@@ -49,6 +50,7 @@ app.post(
 );
 app.get('/auth/me', checkAuth, UserController.getMe);
 app.get('/posts', PostController.getAll);
+app.get('/posts/tags', PostController.getLastTags);
 app.get('/posts/:id', PostController.getOne);
 app.post(
 	'/posts',
@@ -57,6 +59,15 @@ app.post(
 	handleValidationsErrors,
 	PostController.create
 );
+
+app.post(
+	'/posts/:id/comments',
+	checkAuth,
+	commentCreateValidation,
+	handleValidationsErrors,
+	PostController.createComment
+);
+
 app.delete('/posts/:id', checkAuth, PostController.remove);
 app.patch(
 	'/posts/:id',
@@ -65,6 +76,7 @@ app.patch(
 	handleValidationsErrors,
 	PostController.update
 );
+
 app.post('/upload', checkAuth, upload.single('image'), (req, res) => {
 	res.json({
 		url: `/uploads/${req.file.originalname}`,
