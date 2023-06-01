@@ -102,7 +102,6 @@ export const remove = async (req, res) => {
 };
 
 export const update = async (req, res) => {
-	console.log(req.body);
 	try {
 		const postId = req.params.id;
 

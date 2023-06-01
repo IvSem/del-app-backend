@@ -60,7 +60,7 @@ app.get('/auth/me', checkAuth, UserController.getMe);
 app.get('/posts', PostController.getAll);
 app.get('/posts/tags', PostController.getLastTags);
 app.get('/posts/:id', PostController.getOne);
-app.get('/tags/:name', PostController.getArticlesByTag);
+app.get('/tags/:tag', PostController.getArticlesByTag);
 app.post(
 	'/posts',
 	checkAuth,
@@ -79,7 +79,7 @@ app.post(
 
 app.delete('/posts/:id', checkAuth, PostController.remove);
 app.patch(
-	'/posts/:id',
+	'/posts/:id/edit',
 	checkAuth,
 	postCreateValidation,
 	handleValidationsErrors,
