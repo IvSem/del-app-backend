@@ -27,7 +27,6 @@ const PostSchema = new mongoose.Schema(
 		},
 		text: {
 			type: String,
-			unique: true,
 			required: true,
 		},
 		tags: {
@@ -52,4 +51,6 @@ const PostSchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
-export default mongoose.model('Post', PostSchema);
+const PostModel = mongoose.model('Post', PostSchema);
+
+export default PostModel;

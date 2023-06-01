@@ -3,13 +3,15 @@ import UserModel from '../models/User.js';
 
 export const getAll = async (req, res) => {
 	try {
-		const posts = await PostModel.find().populate('user').exec();
-
-		const extractedData = posts.map(item => {
-			const { passwordHash, ...rest } = item.user._doc;
-			return { ...item._doc, user: rest };
-		});
-		res.json(extractedData);
+		const posts = await PostModel.find()
+			.populate({
+				path: 'user',
+				select: 'fullName avatarUrl',
+				model: UserModel,
+			})
+			.sort({ createdAt: -1 })
+			.exec();
+		res.json(posts);
 	} catch (err) {
 		console.log(err);
 		res.status(500).json({
@@ -30,13 +32,24 @@ export const getOne = async (req, res) => {
 			{
 				returnDocument: 'after',
 			}
-		);
+		)
+			.populate({
+				path: 'user',
+				select: 'fullName avatarUrl _id',
+				model: UserModel,
+			})
+			.populate({
+				path: 'comments.author',
+				select: 'fullName avatarUrl',
+				model: UserModel,
+			});
 
 		if (!doc) {
 			return res.status(404).json({
 				message: 'Article not found',
 			});
 		}
+
 		res.json(doc);
 	} catch (err) {
 		console.log(err);
@@ -46,7 +59,7 @@ export const getOne = async (req, res) => {
 	}
 };
 
-export const create = async (req, res) => {
+export const createPost = async (req, res) => {
 	try {
 		const doc = new PostModel({
 			title: req.body.title,
@@ -78,7 +91,7 @@ export const remove = async (req, res) => {
 		}
 
 		res.json({
-			success: true,
+			message: 'Article succes deleted',
 		});
 	} catch (err) {
 		console.log(err);
@@ -89,6 +102,7 @@ export const remove = async (req, res) => {
 };
 
 export const update = async (req, res) => {
+	console.log(req.body);
 	try {
 		const postId = req.params.id;
 
@@ -104,7 +118,7 @@ export const update = async (req, res) => {
 		);
 
 		res.json({
-			succes: true,
+			message: 'Succes update article',
 		});
 	} catch (err) {
 		console.log(err);
@@ -117,13 +131,15 @@ export const update = async (req, res) => {
 
 export const getLastTags = async (req, res) => {
 	try {
-		const posts = await PostModel.find().limit(5).exec();
+		const posts = await PostModel.find()
+			.sort({ viewsCount: -1 })
+			.limit(5)
+			.exec();
+
 		const tags = posts
-			.map(el => {
-				el.tags;
-			})
+			.map(el => el.tags)
 			.flat()
-			.slice(0, 5);
+			.splice(0, 5);
 
 		res.json(tags);
 	} catch (err) {
@@ -133,36 +149,66 @@ export const getLastTags = async (req, res) => {
 		});
 	}
 };
+
 export const createComment = async (req, res) => {
 	try {
 		const postId = req.params.id;
-		const post = await PostModel.findById(postId);
-
-		if (!post) {
-			return res.status(404).json({ message: 'Article not found' });
-		}
 
 		const user = await UserModel.findById(req.body.authorId);
+
 		if (!user) {
 			return res.status(404).json({ message: 'User not found' });
 		}
 
-		const newComment = {
+		const comment = {
 			author: req.body.authorId,
 			content: req.body.content,
 		};
 
 		const updatedPost = await PostModel.findOneAndUpdate(
-			{ _id: postId },
-			{ $push: { comments: newComment } },
-			{ new: true }
-		);
+			{
+				_id: postId,
+			},
+			{ $push: { comments: comment } },
+			{
+				returnDocument: 'after',
+			}
+		).populate({
+			path: 'comments.author',
+			select: 'fullName email avatarUrl -_id',
+			model: UserModel,
+		});
 
 		res.json(updatedPost);
 	} catch (err) {
 		console.log(err);
 		res.status(500).json({
-			message: 'Failed to added comment',
+			message: 'Failed to add comment',
+		});
+	}
+};
+
+export const getArticlesByTag = async (req, res) => {
+	try {
+		const tag = req.params.tag;
+
+		const articles = await PostModel.find({ tags: tag })
+			.populate({
+				path: 'user',
+				select: 'fullName avatarUrl _id',
+				model: UserModel,
+			})
+			.populate({
+				path: 'comments.author',
+				select: 'fullName avatarUrl',
+				model: UserModel,
+			});
+
+		res.json(articles);
+	} catch (err) {
+		console.log(err);
+		res.status(500).json({
+			message: 'Failed to get articles',
 		});
 	}
 };
