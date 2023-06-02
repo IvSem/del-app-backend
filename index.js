@@ -12,8 +12,10 @@ import {
 } from './validations/validations.js';
 import { PostController, UserController } from './controllers/index.js';
 import { checkAuth, handleValidationsErrors } from './utils/index.js';
-
+const app = express();
+app.use(cors());
 dotenv.config();
+
 mongoose
 	.connect(process.env.DB_URL)
 	.then(() => {
@@ -22,8 +24,6 @@ mongoose
 	.catch(err => {
 		console.log('DB error', err);
 	});
-
-const app = express();
 
 const storage = multer.diskStorage({
 	destination: (_, __, cb) => {
@@ -35,14 +35,16 @@ const storage = multer.diskStorage({
 	filename: (_, file, cb) => {
 		cb(null, file.originalname);
 	},
+	limits: {
+		fileSize: 1048576,
+	},
 });
 
 const upload = multer({ storage });
 
-app.use(express.json());
-app.use(cors());
 app.use('/uploads', express.static('uploads'));
 
+app.use(express.json());
 app.post(
 	'/auth/register',
 	registerValidation,
@@ -86,11 +88,22 @@ app.patch(
 	PostController.update
 );
 
-app.post('/upload', checkAuth, upload.single('image'), (req, res) => {
-	res.json({
-		url: `/uploads/${req.file.originalname}`,
-	});
-});
+const corsOptions = {
+	origin: 'https://del-app-backend.vercel.app',
+	optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
+};
+
+app.post(
+	'/upload',
+	cors(corsOptions),
+	checkAuth,
+	upload.single('image'),
+	(req, res) => {
+		res.json({
+			url: `/uploads/${req.file.originalname}`,
+		});
+	}
+);
 
 app.listen(process.env.PORT || 5001, err => {
 	if (err) {
